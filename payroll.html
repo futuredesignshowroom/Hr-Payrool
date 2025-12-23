@@ -3,224 +3,64 @@
 <head>
     <title>Payroll - Future Designz</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* LOGO STYLING FOR SIDEBAR */
-        .sidebar-logo {
-            width: 100%;
-            max-width: 180px;
-            margin-bottom: 20px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* SLIP DESIGN (PRINT FRIENDLY) */
-        .payslip-box {
-            background: white;
-            padding: 40px;
-            border: 2px solid #1a237e;
-            width: 550px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-
-        .slip-logo {
-            width: 150px;
-            margin-bottom: 10px;
-        }
-
-        .payslip-header {
-            text-align: center;
-            border-bottom: 3px double #1a237e;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-        }
-        
-        .slip-section {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            border-bottom: 1px dashed #ddd;
-            padding-bottom: 5px;
-        }
-        .label { font-weight: bold; color: #555; }
-        .value { color: #000; font-weight: 600; }
-
-        .total-box {
-            background: #f8f9fa;
-            padding: 15px;
-            margin-top: 30px;
-            border: 1px solid #1a237e;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .paid-stamp {
-            border: 3px solid #2e7d32;
-            color: #2e7d32;
-            padding: 5px 15px;
-            font-weight: bold;
-            transform: rotate(-15deg);
-            display: inline-block;
-            border-radius: 5px;
-        }
-
-        /* PRINT SETTINGS: Sirf slip print hogi, baaki buttons nahi */
-        @media print {
-            body * { visibility: hidden; }
-            #slipModal, #slipModal * { visibility: visible; }
-            #slipModal { position: absolute; left: 0; top: 0; width: 100%; }
-            .btn-pay, .btn-delete { display: none; }
-        }
-    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
     <div class="sidebar">
-        <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo" alt="Future Designz">
-        
-        <a href="index.html">Dashboard</a>
-        <a href="employees.html">Employees</a>
-        <a href="payroll.html" class="active">Payroll</a>
+        <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo">
+        <a href="index.html">🏠 Dashboard</a>
+        <a href="employees.html">👥 Employees</a>
+        <a href="attendance.html">⌚ Live Attendance</a>
+        <a href="payroll.html" class="active">💰 Payroll Slips</a>
     </div>
     <div class="main-content">
-        <div class="brand-name">Payroll & Payments</div>
-        
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Employee ID</th>
-                        <th>Name</th>
-                        <th>Salary</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="payTable">
-                    </tbody>
+        <h1 class="brand-title">Salary & Payroll Management</h1>
+        <div class="card">
+            <input type="month" id="salaryMonth" class="btn">
+            <button class="btn btn-primary" onclick="calculateSalaries()">Generate Monthly Report</button>
+        </div>
+        <div class="card">
+            <table id="payrollTable">
+                <thead><tr><th>Emp ID</th><th>Name</th><th>Days Present</th><th>Estimated Salary</th></tr></thead>
+                <tbody></tbody>
             </table>
         </div>
-
-        </div>
-
-    <div class="modal-overlay" id="slipModal">
-        <div class="payslip-box">
-            <div class="payslip-header">
-                <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="slip-logo" alt="Future Designz">
-                <p style="font-weight: bold; color: #1a237e;">SALARY PAYMENT ADVICE - DEC 2025</p>
-            </div>
-            
-            <div class="slip-body">
-                <div class="slip-section">
-                    <span class="label">Employee ID:</span>
-                    <span class="value" id="sID"></span>
-                </div>
-                <div class="slip-section">
-                    <span class="label">Full Name:</span>
-                    <span class="value" id="sName"></span>
-                </div>
-                <div class="slip-section">
-                    <span class="label">Designation:</span>
-                    <span class="value" id="sPos"></span>
-                </div>
-                <div class="slip-section">
-                    <span class="label">Payment Date:</span>
-                    <span class="value" id="sDate"></span>
-                </div>
-                <div class="slip-section">
-                    <span class="label">Currency:</span>
-                    <span class="value">Pakistani Rupee (PKR)</span>
-                </div>
-                
-                <div class="total-box">
-                    <div>
-                        <span style="font-size: 14px; display: block; color: #666;">NET SALARY PAID:</span>
-                        <span style="font-size: 24px; font-weight: bold; color: #1a237e;" id="sAmount"></span>
-                    </div>
-                    <div class="paid-stamp">OFFICIAL PAID</div>
-                </div>
-            </div>
-
-            <div style="margin-top: 30px; text-align: center;">
-                <button class="btn-pay" style="width: 100%;" onclick="window.print()">Print Payslip</button>
-                <button class="btn-delete" style="width: 100%; margin-top: 10px;" onclick="closeModal()">Close Window</button>
-            </div>
-        </div>
     </div>
-
     <script>
-        /**
-         * FUNCTION: Payroll table ko populate karna
-         */
-        function renderPayroll() {
-            let emps = JSON.parse(localStorage.getItem('hr_data')) || [];
-            let paidList = JSON.parse(localStorage.getItem('paid_ids')) || [];
+        const firebaseConfig = { databaseURL: "https://hr-payrool-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        async function calculateSalaries() {
+            const selectedMonth = document.getElementById('salaryMonth').value;
+            if(!selectedMonth) return alert("Please select a month");
+
+            const empsSnapshot = await db.ref('employees').once('value');
+            const logsSnapshot = await db.ref('attendance_logs').once('value');
+            const logs = logsSnapshot.val();
             let html = "";
 
-            emps.forEach(e => {
-                let isPaid = paidList.includes(e.id);
-                html += `<tr>
-                    <td>${e.id}</td>
-                    <td>${e.name}</td>
-                    <td>Rs. ${parseFloat(e.salary).toLocaleString()}</td>
-                    <td>${isPaid ? '<span class="status-paid">PAID</span>' : '<span style="color:#d32f2f; font-weight:bold;">PENDING</span>'}</td>
-                    <td>
-                        ${isPaid 
-                            ? `<button class="btn-view" onclick="showFullSlip('${e.id}', '${e.name}', '${e.pos}', '${e.salary}')">View Detail Slip</button>` 
-                            : `<button class="btn-pay" onclick="payNow('${e.id}')">Pay Now</button>`}
-                    </td>
-                </tr>`;
-            });
-            document.getElementById('payTable').innerHTML = html;
-        }
+            empsSnapshot.forEach(emp => {
+                let presentDays = 0;
+                const empId = emp.key;
+                const empName = emp.val().name;
 
-        /**
-         * FUNCTION: Payment process karna
-         */
-        function payNow(id) {
-            if(confirm("Confirm payment for ID: " + id + "?")) {
-                let paidList = JSON.parse(localStorage.getItem('paid_ids')) || [];
-                if(!paidList.includes(id)) {
-                    paidList.push(id);
-                    localStorage.setItem('paid_ids', JSON.stringify(paidList));
-                    renderPayroll();
+                if(logs) {
+                    Object.keys(logs).forEach(date => {
+                        if(date.startsWith(selectedMonth) && logs[date][empId]) {
+                            presentDays++;
+                        }
+                    });
                 }
-            }
+                
+                // Example: 1500 per day salary logic
+                const salary = presentDays * 1500; 
+
+                html += `<tr><td>${empId}</td><td>${empName}</td><td>${presentDays}</td><td>Rs. ${salary}</td></tr>`;
+            });
+            document.querySelector('#payrollTable tbody').innerHTML = html;
         }
-
-        /**
-         * FUNCTION: Slip mein data fill kar k dikhana
-         */
-        function showFullSlip(id, name, pos, salary) {
-            document.getElementById('sID').innerText = id;
-            document.getElementById('sName').innerText = name;
-            document.getElementById('sPos').innerText = pos;
-            document.getElementById('sAmount').innerText = "Rs. " + parseFloat(salary).toLocaleString();
-            
-            // Current Date setting
-            const today = new Date().toLocaleDateString('en-GB');
-            document.getElementById('sDate').innerText = today;
-
-            document.getElementById('slipModal').style.display = 'flex';
-        }
-
-        /**
-         * FUNCTION: Modal band karna
-         */
-        function closeModal() {
-            document.getElementById('slipModal').style.display = 'none';
-        }
-
-        /**
-         * REAL-TIME SYNC: Doosre tabs mein tabdili pakarna
-         */
-        window.addEventListener('storage', renderPayroll);
-        
-        // Initial Table Load
-        window.onload = renderPayroll;
-
-        /* FUTURE SCRIPTS:
-           Yahan aap 'Export to Excel' ya 'Bulk Payment' ka logic add kar sakte hain.
-        */
     </script>
 </body>
 </html>
