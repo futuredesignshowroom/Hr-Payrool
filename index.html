@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>HR Dashboard - Future Designz</title>
+    <title>Payroll - Future Designz</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -9,26 +9,25 @@
 <body>
     <div class="sidebar">
         <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo">
-        <a href="index.html" class="active">🏠 Dashboard</a>
+        <a href="index.html">🏠 Dashboard</a>
         <a href="employees.html">👥 Employees</a>
         <a href="attendance.html">⌚ Live Attendance</a>
-        <a href="payroll.html">💰 Payroll Slips</a>
+        <a href="payroll.html" class="active">💰 Payroll Slips</a>
     </div>
     <div class="main-content">
-        <div class="header-flex">
-            <h1 class="brand-title">Future Designz HR Cloud</h1>
-            <div id="liveTime" style="font-weight: 600; color: #666;"></div>
-        </div>
-        <div class="stats-grid">
-            <div class="stat-card" style="background: #3949ab;"><h3>Total Staff</h3><h2 id="totalEmp">0</h2></div>
-            <div class="stat-card" style="background: #2e7d32;"><h3>Present Today</h3><h2 id="todayPres">0</h2></div>
-            <div class="stat-card" style="background: #e64a19;"><h3>On Leave</h3><h2>0</h2></div>
+        <h1 class="brand-title">Future Designz Salary Cloud</h1>
+        <div class="card">
+            <h3>Generate Salary Report</h3>
+            <input type="month" id="salaryMonth" class="btn">
+            <input type="number" id="perDayRate" placeholder="Rate Per Day (Rs.)" value="1500">
+            <button class="btn btn-primary" onclick="calculateSalaries()">Process Payroll</button>
         </div>
         <div class="card">
-            <h3>Recent Activity</h3>
-            <table id="recentLogs">
-                <thead><tr><th>Time</th><th>Employee</th><th>Action</th></tr></thead>
-                <tbody></tbody>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Designation</th><th>Days</th><th>Total Salary</th><th>Status</th></tr>
+                </thead>
+                <tbody id="payrollBody"></tbody>
             </table>
         </div>
     </div>
@@ -37,20 +36,36 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Clock
-        setInterval(() => { document.getElementById('liveTime').innerText = new Date().toLocaleString(); }, 1000);
+        async function calculateSalaries() {
+            const month = document.getElementById('salaryMonth').value;
+            const rate = document.getElementById('perDayRate').value;
+            if(!month) return alert("Please select a month!");
 
-        // Stats Logic
-        db.ref('employees').on('value', s => document.getElementById('totalEmp').innerText = s.numChildren());
-        const today = new Date().toISOString().split('T')[0];
-        db.ref('attendance_logs/' + today).on('value', s => {
-            document.getElementById('todayPres').innerText = s.numChildren();
+            const emps = (await db.ref('employees').once('value')).val();
+            const logs = (await db.ref('attendance_logs').once('value')).val();
             let html = "";
-            s.forEach(log => {
-                html += `<tr><td>${log.val().checkIn}</td><td>${log.val().name}</td><td><span class="status-present">Check-In</span></td></tr>`;
+
+            if(!emps) return alert("No employees found!");
+
+            Object.keys(emps).forEach(id => {
+                let days = 0;
+                if(logs) {
+                    Object.keys(logs).forEach(date => {
+                        if(date.startsWith(month) && logs[date][id]) days++;
+                    });
+                }
+                const total = days * rate;
+                html += `<tr>
+                    <td>${id}</td>
+                    <td>${emps[id].name}</td>
+                    <td>${emps[id].role || 'Staff'}</td>
+                    <td>${days}</td>
+                    <td style="font-weight:bold; color:#1a237e;">Rs. ${total}</td>
+                    <td><span class="status-present">Calculated</span></td>
+                </tr>`;
             });
-            document.querySelector('#recentLogs tbody').innerHTML = html;
-        });
+            document.getElementById('payrollBody').innerHTML = html;
+        }
     </script>
 </body>
 </html>
