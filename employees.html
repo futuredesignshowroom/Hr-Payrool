@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Employees - Future Designz</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* LOGO STYLING */
+        .sidebar-logo {
+            width: 100%;
+            max-width: 180px;
+            margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo" alt="Future Designz">
+        
+        <a href="index.html">Dashboard</a>
+        <a href="employees.html" class="active">Employees</a>
+        <a href="payroll.html">Payroll</a>
+
+        </div>
+    <div class="main-content">
+        <div class="brand-name">Employee Directory</div>
+        
+        <button onclick="document.getElementById('addModal').style.display='flex'">+ Add Staff Member</button>
+
+        <div class="table-container" style="margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Position</th>
+                        <th>Salary (PKR)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="empTable">
+                    </tbody>
+            </table>
+        </div>
+
+        </div>
+
+    <div class="modal-overlay" id="addModal">
+        <div class="modal-content">
+            <h3>New Employee Detail</h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Please enter official details</p>
+            
+            <input type="text" id="eID" placeholder="Emp ID (e.g FD-001)">
+            <input type="text" id="eName" placeholder="Full Name">
+            <input type="text" id="ePos" placeholder="Position (e.g Designer)">
+            <input type="number" id="eSal" placeholder="Basic Salary (PKR)">
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button style="flex: 1;" onclick="saveEmp()">Save Data</button>
+                <button class="btn-delete" style="flex: 1;" onclick="document.getElementById('addModal').style.display='none'">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * FUNCTION: Table ko refresh karne k liye
+         * Yeh function local storage se data nikal kar table mein dalta hai
+         */
+        function renderTable() {
+            let emps = JSON.parse(localStorage.getItem('hr_data')) || [];
+            let html = "";
+            
+            emps.forEach((e, index) => {
+                html += `<tr>
+                    <td>${e.id}</td>
+                    <td>${e.name}</td>
+                    <td>${e.pos}</td>
+                    <td>Rs. ${parseFloat(e.salary).toLocaleString()}</td>
+                    <td><button class="btn-delete" onclick="removeEmp(${index})">Remove Staff</button></td>
+                </tr>`;
+            });
+            document.getElementById('empTable').innerHTML = html;
+        }
+
+        /**
+         * FUNCTION: Naya Employee save karne k liye
+         */
+        function saveEmp() {
+            let idInput = document.getElementById('eID').value;
+            let nameInput = document.getElementById('eName').value;
+            let posInput = document.getElementById('ePos').value;
+            let salInput = document.getElementById('eSal').value;
+
+            // Validation check
+            if(!idInput || !nameInput || !salInput) {
+                alert("Sari fields bharna zaroori hain!");
+                return;
+            }
+
+            let emps = JSON.parse(localStorage.getItem('hr_data')) || [];
+            
+            // New Object Creation
+            emps.push({
+                id: idInput,
+                name: nameInput,
+                pos: posInput,
+                salary: salInput
+            });
+
+            // Save to Local Storage
+            localStorage.setItem('hr_data', JSON.stringify(emps));
+            
+            // UI Update
+            renderTable(); 
+            document.getElementById('addModal').style.display = 'none';
+
+            // Inputs Clear
+            document.getElementById('eID').value = "";
+            document.getElementById('eName').value = "";
+            document.getElementById('ePos').value = "";
+            document.getElementById('eSal').value = "";
+        }
+
+        /**
+         * FUNCTION: Employee ko list se khatam karne k liye
+         */
+        function removeEmp(i) {
+            if(confirm("Kya aap is employee ko delete karna chahte hain?")) {
+                let emps = JSON.parse(localStorage.getItem('hr_data')) || [];
+                emps.splice(i, 1);
+                localStorage.setItem('hr_data', JSON.stringify(emps));
+                renderTable();
+            }
+        }
+
+        /**
+         * REAL-TIME SYNC:
+         * Agar doosre tab (Dashboard/Payroll) mein data change ho to yahan update ho jaye
+         */
+        window.addEventListener('storage', renderTable);
+        
+        // Page load hone par table render karein
+        window.onload = renderTable;
+
+        /* FUTURE SCRIPT ADDITIONS: 
+           Yahan aap search filtering ya sorting ka logic add kar sakte hain.
+        */
+    </script>
+</body>
+</html>
