@@ -4,8 +4,8 @@
     <title>Payroll - Future Designz</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
     <div id="loginModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;">
@@ -48,63 +48,91 @@
         const firebaseConfig = { databaseURL: "https://hr-payrool-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const auth = firebase.auth();
         let currentUser = null;
         let currentRole = null;
 
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
+        // Initialize users if not exist
+        if (!localStorage.getItem('users')) {
+            const users = {
+                'Hamza': { password: CryptoJS.SHA256('Hamza0327@@').toString(), role: 'primary' },
+                'awais': { password: CryptoJS.SHA256('awais786').toString(), role: 'primary' }
+            };
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        // Check if logged in
+        const loggedUser = localStorage.getItem('currentUser');
+        if (loggedUser) {
+            currentUser = loggedUser;
+            currentRole = localStorage.getItem('currentRole');
+            document.getElementById('loginModal').style.display = 'none';
+            document.querySelector('.sidebar').style.display = 'block';
+            document.querySelector('.main-content').style.display = 'block';
+        } else {
+            document.getElementById('loginModal').style.display = 'flex';
+            document.querySelector('.sidebar').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'none';
+        }
+
+        function login() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const hash = CryptoJS.SHA256(pass).toString();
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            if (users[user] && users[user].password === hash) {
                 currentUser = user;
-                const roleSnap = await db.ref('users/' + user.uid + '/role').once('value');
-                currentRole = roleSnap.val() || 'user';
+                currentRole = users[user].role;
+                localStorage.setItem('currentUser', user);
+                localStorage.setItem('currentRole', currentRole);
                 document.getElementById('loginModal').style.display = 'none';
                 document.querySelector('.sidebar').style.display = 'block';
                 document.querySelector('.main-content').style.display = 'block';
-            } else {
-                document.getElementById('loginModal').style.display = 'flex';
-                document.querySelector('.sidebar').style.display = 'none';
-                document.querySelector('.main-content').style.display = 'none';
-            }
-        });
-
-        async function login() {
-            const userInput = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-            const email = userInput + '@hrpayroll.local';
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
                 document.getElementById('loginError').textContent = '';
-            } catch (error) {
-                document.getElementById('loginError').textContent = error.message;
+            } else {
+                document.getElementById('loginError').textContent = 'Invalid credentials';
             }
         }
 
-        async function signUp() {
-            const userInput = document.getElementById('username').value;
+        function signUp() {
+            const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
-            const email = userInput + '@hrpayroll.local';
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
-                await db.ref('users/' + userCredential.user.uid).set({ role: 'manager' });
-                document.getElementById('loginError').textContent = '';
-            } catch (error) {
-                document.getElementById('loginError').textContent = error.message;
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            if (users[user]) {
+                document.getElementById('loginError').textContent = 'User already exists';
+                return;
             }
+            const hash = CryptoJS.SHA256(pass).toString();
+            users[user] = { password: hash, role: 'manager' };
+            localStorage.setItem('users', JSON.stringify(users));
+            currentUser = user;
+            currentRole = 'manager';
+            localStorage.setItem('currentUser', user);
+            localStorage.setItem('currentRole', 'manager');
+            document.getElementById('loginModal').style.display = 'none';
+            document.querySelector('.sidebar').style.display = 'block';
+            document.querySelector('.main-content').style.display = 'block';
+            document.getElementById('loginError').textContent = '';
         }
 
         function changePassword() {
             const newPass = prompt('Enter new password');
-            if (newPass && auth.currentUser) {
-                auth.currentUser.updatePassword(newPass).then(() => {
-                    alert('Password updated successfully');
-                }).catch(error => {
-                    alert('Error: ' + error.message);
-                });
+            if (newPass) {
+                const hash = CryptoJS.SHA256(newPass).toString();
+                const users = JSON.parse(localStorage.getItem('users') || '{}');
+                users[currentUser].password = hash;
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('Password updated successfully');
             }
         }
 
         function logout() {
-            auth.signOut();
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentRole');
+            currentUser = null;
+            currentRole = null;
+            document.getElementById('loginModal').style.display = 'flex';
+            document.querySelector('.sidebar').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'none';
         }
 
         async function calculateSalaries() {
