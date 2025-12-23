@@ -4,18 +4,31 @@
     <title>Payroll - Future Designz</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
-    <div class="sidebar">
+    <div id="loginModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:white; padding:20px; border-radius:5px; width:300px;">
+            <h2>Login</h2>
+            <input id="username" placeholder="Username" required><br><br>
+            <input id="password" type="password" placeholder="Password" required><br><br>
+            <button onclick="login()">Login</button>
+            <button onclick="signUp()">Sign Up</button>
+            <p id="loginError" style="color:red;"></p>
+        </div>
+    </div>
+    <div class="sidebar" style="display:none;">
         <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo">
         <a href="index.html">🏠 Dashboard</a>
         <a href="employees.html">👥 Employees</a>
         <a href="attendance.html">⌚ Live Attendance</a>
         <a href="payroll.html" class="active">💰 Payroll Slips</a>
+        <a onclick="logout()">Logout</a>
     </div>
-    <div class="main-content">
+    <div class="main-content" style="display:none;">
         <h1 class="brand-title">Future Designz Salary Cloud</h1>
+        <button onclick="changePassword()">Change Password</button>
         <div class="card">
             <h3>Generate Salary Report</h3>
             <input type="month" id="salaryMonth" class="btn">
@@ -35,6 +48,64 @@
         const firebaseConfig = { databaseURL: "https://hr-payrool-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const auth = firebase.auth();
+        let currentUser = null;
+        let currentRole = null;
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                const roleSnap = await db.ref('users/' + user.uid + '/role').once('value');
+                currentRole = roleSnap.val() || 'user';
+                document.getElementById('loginModal').style.display = 'none';
+                document.querySelector('.sidebar').style.display = 'block';
+                document.querySelector('.main-content').style.display = 'block';
+            } else {
+                document.getElementById('loginModal').style.display = 'flex';
+                document.querySelector('.sidebar').style.display = 'none';
+                document.querySelector('.main-content').style.display = 'none';
+            }
+        });
+
+        async function login() {
+            const userInput = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const email = userInput + '@hrpayroll.local';
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+                document.getElementById('loginError').textContent = '';
+            } catch (error) {
+                document.getElementById('loginError').textContent = error.message;
+            }
+        }
+
+        async function signUp() {
+            const userInput = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const email = userInput + '@hrpayroll.local';
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+                await db.ref('users/' + userCredential.user.uid).set({ role: 'manager' });
+                document.getElementById('loginError').textContent = '';
+            } catch (error) {
+                document.getElementById('loginError').textContent = error.message;
+            }
+        }
+
+        function changePassword() {
+            const newPass = prompt('Enter new password');
+            if (newPass && auth.currentUser) {
+                auth.currentUser.updatePassword(newPass).then(() => {
+                    alert('Password updated successfully');
+                }).catch(error => {
+                    alert('Error: ' + error.message);
+                });
+            }
+        }
+
+        function logout() {
+            auth.signOut();
+        }
 
         async function calculateSalaries() {
             const month = document.getElementById('salaryMonth').value;
