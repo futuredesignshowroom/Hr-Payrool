@@ -1,5 +1,5 @@
 // Tests for utils.js
-import { formatCurrency, calculateDaysWorked } from './js/utils.js';
+import { formatCurrency, calculateDaysWorked } from '../js/utils.js';
 
 describe('formatCurrency', () => {
   test('formats amount with Rs.', () => {
