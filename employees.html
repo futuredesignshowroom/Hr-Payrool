@@ -96,7 +96,7 @@
             currentUser = loggedUser;
             currentRole = localStorage.getItem('currentRole');
         } else {
-            const modal = new bootstrap.Modal(document.getElementById('loginModal'), { backdrop: 'static' });
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
             modal.show();
         }
 
@@ -166,7 +166,7 @@
             localStorage.removeItem('currentRole');
             currentUser = null;
             currentRole = null;
-            const modal = new bootstrap.Modal(document.getElementById('loginModal'), { backdrop: 'static' });
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
             modal.show();
             document.querySelector('.sidebar').style.display = 'none';
             document.querySelector('.main-content').style.display = 'none';
