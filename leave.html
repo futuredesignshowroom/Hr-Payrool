@@ -32,7 +32,7 @@
         </div>
     </div>
     <div class="d-flex">
-        <div class="sidebar bg-primary text-white p-3" style="width: 260px; min-height: 100vh; position: fixed; z-index: 100;">
+        <div class="sidebar bg-primary text-white p-3" style="width: 260px; min-height: 100vh; position: fixed; z-index: 100; display: none;">
             <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo mb-4" style="width: 100%; max-width: 190px; filter: brightness(0) invert(1);">
             <a href="index.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">🏠 Dashboard</a>
             <a href="employees.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">👥 Employees</a>
@@ -41,7 +41,7 @@
             <a href="leave.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded active" style="background: var(--secondary);">📅 Leave Management</a>
             <a onclick="logout()" class="d-block text-white text-decoration-none p-2 mb-2 rounded" style="cursor: pointer;">Logout</a>
         </div>
-        <div class="main-content flex-fill p-4" style="margin-left: 260px;">
+        <div class="main-content flex-fill p-4" style="margin-left: 260px; display: none;">
             <h1 class="brand-title mb-4">Leave Management</h1>
             <button onclick="changePassword()" class="btn btn-outline-primary mb-3">Change Password</button>
             <div class="card p-4 mb-4">
@@ -103,17 +103,11 @@
         if (loggedUser) {
             currentUser = loggedUser;
             currentRole = localStorage.getItem('currentRole');
-            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
-            modal.hide();
-            document.querySelector('.sidebar').style.display = 'block';
-            document.querySelector('.main-content').style.display = 'block';
             loadEmployees();
             loadLeaves();
         } else {
-            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'), { backdrop: 'static' });
             modal.show();
-            document.querySelector('.sidebar').style.display = 'none';
-            document.querySelector('.main-content').style.display = 'none';
         }
 
         function login() {
