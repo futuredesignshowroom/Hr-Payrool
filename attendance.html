@@ -32,6 +32,20 @@
         </div>
     </div>
     <div class="d-flex">
+        <!-- Desktop Sidebar -->
+        <div class="d-none d-lg-block bg-primary text-white p-3" style="width: 260px; min-height: 100vh; position: fixed; z-index: 100;">
+            <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo mb-4" style="width: 100%; max-width: 190px; filter: brightness(0) invert(1);">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <button id="darkModeToggle" class="btn btn-outline-light btn-sm">🌙 Dark Mode</button>
+            </div>
+            <a href="index.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">🏠 Dashboard</a>
+            <a href="employees.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">👥 Employees</a>
+            <a href="attendance.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded active" style="background: var(--secondary);">⌚ Live Attendance</a>
+            <a href="payroll.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">💰 Payroll Slips</a>
+            <a href="leave.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">📅 Leave Management</a>
+            <a onclick="logout()" class="d-block text-white text-decoration-none p-2 mb-2 rounded" style="cursor: pointer;">Logout</a>
+        </div>
+        <!-- Mobile Offcanvas Sidebar -->
         <div class="offcanvas offcanvas-start bg-primary text-white" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel" style="width: 260px;">
             <div class="offcanvas-header">
                 <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">Menu</h5>
@@ -50,7 +64,7 @@
                 <a onclick="logout()" class="d-block text-white text-decoration-none p-2 mb-2 rounded" style="cursor: pointer;">Logout</a>
             </div>
         </div>
-        <div class="main-content flex-fill p-4" style="margin-left: 0; width: 100%;">
+        <div class="main-content flex-fill p-4">
             <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 d-lg-none">
                 <div class="container-fluid">
                     <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
@@ -202,17 +216,28 @@
         }
 
         // Dark Mode Toggle
-        document.getElementById('darkModeToggle').addEventListener('click', function() {
+        function toggleDarkMode(button) {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-bs-theme');
             if (currentTheme === 'dark') {
                 html.removeAttribute('data-bs-theme');
-                this.textContent = '🌙 Dark Mode';
+                button.textContent = '🌙 Dark Mode';
             } else {
                 html.setAttribute('data-bs-theme', 'dark');
-                this.textContent = '☀️ Light Mode';
+                button.textContent = '☀️ Light Mode';
             }
             localStorage.setItem('theme', html.getAttribute('data-bs-theme') || 'light');
+            // Sync both buttons
+            document.getElementById('darkModeToggle').textContent = button.textContent;
+            document.getElementById('darkModeToggleMobile').textContent = button.textContent;
+        }
+
+        document.getElementById('darkModeToggle').addEventListener('click', function() {
+            toggleDarkMode(this);
+        });
+
+        document.getElementById('darkModeToggleMobile').addEventListener('click', function() {
+            toggleDarkMode(this);
         });
 
         // Load saved theme
@@ -220,6 +245,7 @@
         if (savedTheme === 'dark') {
             document.documentElement.setAttribute('data-bs-theme', 'dark');
             document.getElementById('darkModeToggle').textContent = '☀️ Light Mode';
+            document.getElementById('darkModeToggleMobile').textContent = '☀️ Light Mode';
         }
 
         // Notification Function

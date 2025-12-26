@@ -4,7 +4,11 @@ body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--light);
 .sidebar-logo { width: 100%; max-width: 190px; margin-bottom: 40px; filter: brightness(0) invert(1); }
 .sidebar a { display: block; color: rgba(255,255,255,0.8); text-decoration: none; padding: 15px; margin-bottom: 8px; border-radius: 8px; transition: 0.3s; }
 .sidebar a:hover, .sidebar a.active { background: var(--secondary); color: white; transform: translateX(5px); }
-.main-content { margin-left: 310px; padding: 40px; width: calc(100% - 310px); }
+.main-content { margin-left: 0; padding: 40px; width: 100%; }
+
+@media (min-width: 992px) {
+    .main-content { margin-left: 260px; width: calc(100% - 260px); }
+}
 .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .brand-title { font-size: 28px; font-weight: 800; color: var(--primary); margin: 0; }
 .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 25px; }
