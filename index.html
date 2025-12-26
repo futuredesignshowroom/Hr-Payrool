@@ -2,46 +2,100 @@
 <html lang="en">
 <head>
     <title>Payroll - Future Designz</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
-    <div id="loginModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;">
-        <div style="background:white; padding:20px; border-radius:5px; width:300px;">
-            <h2>Login</h2>
-            <input id="username" placeholder="Username" required><br><br>
-            <input id="password" type="password" placeholder="Password" required><br><br>
-            <button onclick="login()">Login</button>
-            <button onclick="signUp()">Sign Up</button>
-            <p id="loginError" style="color:red;"></p>
+    <div id="loginModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input id="username" class="form-control" placeholder="Username" required>
+                    </div>
+                    <div class="mb-3">
+                        <input id="password" type="password" class="form-control" placeholder="Password" required>
+                    </div>
+                    <p id="loginError" class="text-danger"></p>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="login()" class="btn btn-primary">Login</button>
+                    <button onclick="signUp()" class="btn btn-secondary">Sign Up</button>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="sidebar" style="display:none;">
-        <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo">
-        <a href="index.html">🏠 Dashboard</a>
-        <a href="employees.html">👥 Employees</a>
-        <a href="attendance.html">⌚ Live Attendance</a>
-        <a href="payroll.html" class="active">💰 Payroll Slips</a>
-        <a onclick="logout()">Logout</a>
-    </div>
-    <div class="main-content" style="display:none;">
-        <h1 class="brand-title">Future Designz Salary Cloud</h1>
-        <button onclick="changePassword()">Change Password</button>
-        <div class="card">
-            <h3>Generate Salary Report</h3>
-            <input type="month" id="salaryMonth" class="btn">
-            <input type="number" id="perDayRate" placeholder="Rate Per Day (Rs.)" value="1500">
-            <button class="btn btn-primary" onclick="calculateSalaries()">Process Payroll</button>
+    <div class="d-flex">
+        <div class="sidebar bg-primary text-white p-3" style="width: 260px; min-height: 100vh; position: fixed; z-index: 100;">
+            <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo mb-4" style="width: 100%; max-width: 190px; filter: brightness(0) invert(1);">
+            <a href="index.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded active" style="background: var(--secondary);">🏠 Dashboard</a>
+            <a href="employees.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">👥 Employees</a>
+            <a href="attendance.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">⌚ Live Attendance</a>
+            <a href="payroll.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">💰 Payroll Slips</a>
+            <a href="leave.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">📅 Leave Management</a>
+            <a onclick="logout()" class="d-block text-white text-decoration-none p-2 mb-2 rounded" style="cursor: pointer;">Logout</a>
         </div>
-        <div class="card">
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Name</th><th>Designation</th><th>Days</th><th>Total Salary</th><th>Status</th></tr>
-                </thead>
-                <tbody id="payrollBody"></tbody>
-            </table>
+        <div class="main-content flex-fill p-4" style="margin-left: 260px;">
+            <h1 class="brand-title mb-4">Future Designz Salary Cloud</h1>
+            <button onclick="changePassword()" class="btn btn-outline-primary mb-3">Change Password</button>
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center p-3">
+                        <h4 id="totalEmployees">0</h4>
+                        <p>Total Employees</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center p-3">
+                        <h4 id="totalAttendance">0</h4>
+                        <p>Present Today</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center p-3">
+                        <h4 id="pendingLeaves">0</h4>
+                        <p>Pending Leaves</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center p-3">
+                        <h4 id="totalPayroll">Rs. 0</h4>
+                        <p>Monthly Payroll</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-4 mb-4">
+                <h3>Generate Salary Report</h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="month" id="salaryMonth" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="number" id="perDayRate" class="form-control" placeholder="Rate Per Day (Rs.)" value="1500">
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" onclick="calculateSalaries()" id="calculateBtn">Process Payroll</button>
+                <div id="loading" class="d-none mt-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Processing...
+                </div>
+            </div>
+            <div class="card p-4">
+                <table class="table table-striped">
+                    <thead>
+                        <tr><th>ID</th><th>Name</th><th>Designation</th><th>Days</th><th>Total Salary</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="payrollBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
     <script>
@@ -65,18 +119,19 @@
         if (loggedUser) {
             currentUser = loggedUser;
             currentRole = localStorage.getItem('currentRole');
-            document.getElementById('loginModal').style.display = 'none';
-            document.querySelector('.sidebar').style.display = 'block';
-            document.querySelector('.main-content').style.display = 'block';
+            loadDashboardStats();
         } else {
-            document.getElementById('loginModal').style.display = 'flex';
-            document.querySelector('.sidebar').style.display = 'none';
-            document.querySelector('.main-content').style.display = 'none';
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'), { backdrop: 'static' });
+            modal.show();
         }
 
         function login() {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            if (!user || !pass) {
+                document.getElementById('loginError').textContent = 'Please fill in all fields';
+                return;
+            }
             const hash = CryptoJS.SHA256(pass).toString();
             const users = JSON.parse(localStorage.getItem('users') || '{}');
             if (users[user] && users[user].password === hash) {
@@ -84,9 +139,11 @@
                 currentRole = users[user].role;
                 localStorage.setItem('currentUser', user);
                 localStorage.setItem('currentRole', currentRole);
-                document.getElementById('loginModal').style.display = 'none';
+                const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+                modal.hide();
                 document.querySelector('.sidebar').style.display = 'block';
                 document.querySelector('.main-content').style.display = 'block';
+                loadDashboardStats();
                 document.getElementById('loginError').textContent = '';
             } else {
                 document.getElementById('loginError').textContent = 'Invalid credentials';
@@ -94,8 +151,12 @@
         }
 
         function signUp() {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            if (!user || !pass) {
+                document.getElementById('loginError').textContent = 'Please fill in all fields';
+                return;
+            }
             const users = JSON.parse(localStorage.getItem('users') || '{}');
             if (users[user]) {
                 document.getElementById('loginError').textContent = 'User already exists';
@@ -108,7 +169,8 @@
             currentRole = 'manager';
             localStorage.setItem('currentUser', user);
             localStorage.setItem('currentRole', 'manager');
-            document.getElementById('loginModal').style.display = 'none';
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            modal.hide();
             document.querySelector('.sidebar').style.display = 'block';
             document.querySelector('.main-content').style.display = 'block';
             document.getElementById('loginError').textContent = '';
@@ -130,7 +192,8 @@
             localStorage.removeItem('currentRole');
             currentUser = null;
             currentRole = null;
-            document.getElementById('loginModal').style.display = 'flex';
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'), { backdrop: 'static' });
+            modal.show();
             document.querySelector('.sidebar').style.display = 'none';
             document.querySelector('.main-content').style.display = 'none';
         }
@@ -140,11 +203,18 @@
             const rate = document.getElementById('perDayRate').value;
             if(!month) return alert("Please select a month!");
 
+            document.getElementById('calculateBtn').disabled = true;
+            document.getElementById('loading').classList.remove('d-none');
+
             const emps = (await db.ref('employees').once('value')).val();
             const logs = (await db.ref('attendance_logs').once('value')).val();
             let html = "";
 
-            if(!emps) return alert("No employees found!");
+            if(!emps) {
+                document.getElementById('calculateBtn').disabled = false;
+                document.getElementById('loading').classList.add('d-none');
+                return alert("No employees found!");
+            }
 
             Object.keys(emps).forEach(id => {
                 let days = 0;
@@ -164,7 +234,29 @@
                 </tr>`;
             });
             document.getElementById('payrollBody').innerHTML = html;
+            document.getElementById('calculateBtn').disabled = false;
+            document.getElementById('loading').classList.add('d-none');
+        }
+
+        async function loadDashboardStats() {
+            // Total Employees
+            const emps = await db.ref('employees').once('value');
+            document.getElementById('totalEmployees').textContent = emps.numChildren();
+
+            // Present Today
+            const today = new Date().toISOString().slice(0, 10);
+            const logs = await db.ref('attendance_logs/' + today).once('value');
+            document.getElementById('totalAttendance').textContent = logs.exists() ? Object.keys(logs.val()).length : 0;
+
+            // Pending Leaves
+            const leaves = await db.ref('leaves').orderByChild('status').equalTo('pending').once('value');
+            document.getElementById('pendingLeaves').textContent = leaves.numChildren();
+
+            // Total Payroll (example, sum of last calculated)
+            // For simplicity, set to 0 or calculate from last payroll
+            document.getElementById('totalPayroll').textContent = 'Rs. 0'; // Can be enhanced
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

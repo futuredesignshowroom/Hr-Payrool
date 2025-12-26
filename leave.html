@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Manage Employees - Future Designz</title>
+    <title>Leave Management - Future Designz</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
-    <div id="loginModal" class="modal fade" tabindex="-1">
+    <div id="loginModal" class="modal fade show" style="display:flex; justify-content:center; align-items:center; background:rgba(0,0,0,0.5);" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -31,49 +31,57 @@
             </div>
         </div>
     </div>
+    <div class="d-flex">
         <div class="sidebar bg-primary text-white p-3" style="width: 260px; min-height: 100vh; position: fixed; z-index: 100;">
             <img src="https://futuredesignz.com/wp-content/uploads/2022/12/future-designs-logo1.webp" class="sidebar-logo mb-4" style="width: 100%; max-width: 190px; filter: brightness(0) invert(1);">
             <a href="index.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">🏠 Dashboard</a>
-            <a href="employees.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded active" style="background: var(--secondary);">👥 Employees</a>
+            <a href="employees.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">👥 Employees</a>
             <a href="attendance.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">⌚ Live Attendance</a>
             <a href="payroll.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">💰 Payroll Slips</a>
-            <a href="leave.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded">📅 Leave Management</a>
+            <a href="leave.html" class="d-block text-white text-decoration-none p-2 mb-2 rounded active" style="background: var(--secondary);">📅 Leave Management</a>
             <a onclick="logout()" class="d-block text-white text-decoration-none p-2 mb-2 rounded" style="cursor: pointer;">Logout</a>
         </div>
         <div class="main-content flex-fill p-4" style="margin-left: 260px;">
-            <h1 class="brand-title mb-4">Employee Registry</h1>
+            <h1 class="brand-title mb-4">Leave Management</h1>
             <button onclick="changePassword()" class="btn btn-outline-primary mb-3">Change Password</button>
             <div class="card p-4 mb-4">
-                <h3>Register New Staff</h3>
+                <h3>Request Leave</h3>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <input type="number" id="empId" class="form-control" placeholder="ZKTeco Device ID">
+                        <select id="empSelect" class="form-control">
+                            <option value="">Select Employee</option>
+                        </select>
                     </div>
                     <div class="col-md-6">
-                        <input type="text" id="empName" class="form-control" placeholder="Full Name">
+                        <select id="leaveType" class="form-control">
+                            <option value="annual">Annual Leave</option>
+                            <option value="sick">Sick Leave</option>
+                            <option value="casual">Casual Leave</option>
+                        </select>
                     </div>
                     <div class="col-md-6">
-                        <input type="text" id="empRole" class="form-control" placeholder="Designation">
+                        <input type="date" id="startDate" class="form-control">
                     </div>
                     <div class="col-md-6">
-                        <input type="email" id="empEmail" class="form-control" placeholder="Email">
+                        <input type="date" id="endDate" class="form-control">
                     </div>
-                    <div class="col-md-6">
-                        <input type="tel" id="empPhone" class="form-control" placeholder="Phone">
-                    </div>
-                    <div class="col-md-6">
-                        <input type="date" id="empHireDate" class="form-control" placeholder="Hire Date">
+                    <div class="col-12">
+                        <textarea id="reason" class="form-control" placeholder="Reason"></textarea>
                     </div>
                 </div>
-                <button class="btn btn-primary mt-3" onclick="addEmployee()">Register Employee</button>
+                <button class="btn btn-primary mt-3" onclick="requestLeave()">Submit Request</button>
             </div>
             <div class="card p-4">
+                <h3>Leave Requests</h3>
                 <table class="table table-striped">
-                    <thead><tr><th>Device ID</th><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Hire Date</th><th>Action</th></tr></thead>
-                    <tbody id="empList"></tbody>
+                    <thead>
+                        <tr><th>Employee</th><th>Type</th><th>Start Date</th><th>End Date</th><th>Reason</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="leaveTable"></tbody>
                 </table>
             </div>
         </div>
+    </div>
     <script>
         const firebaseConfig = { databaseURL: "https://hr-payrool-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
@@ -95,9 +103,17 @@
         if (loggedUser) {
             currentUser = loggedUser;
             currentRole = localStorage.getItem('currentRole');
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            modal.hide();
+            document.querySelector('.sidebar').style.display = 'block';
+            document.querySelector('.main-content').style.display = 'block';
+            loadEmployees();
+            loadLeaves();
         } else {
-            const modal = new bootstrap.Modal(document.getElementById('loginModal'), { backdrop: 'static' });
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
             modal.show();
+            document.querySelector('.sidebar').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'none';
         }
 
         function login() {
@@ -118,6 +134,8 @@
                 modal.hide();
                 document.querySelector('.sidebar').style.display = 'block';
                 document.querySelector('.main-content').style.display = 'block';
+                loadEmployees();
+                loadLeaves();
                 document.getElementById('loginError').textContent = '';
             } else {
                 document.getElementById('loginError').textContent = 'Invalid credentials';
@@ -147,6 +165,8 @@
             modal.hide();
             document.querySelector('.sidebar').style.display = 'block';
             document.querySelector('.main-content').style.display = 'block';
+            loadEmployees();
+            loadLeaves();
             document.getElementById('loginError').textContent = '';
         }
 
@@ -166,39 +186,73 @@
             localStorage.removeItem('currentRole');
             currentUser = null;
             currentRole = null;
-            const modal = new bootstrap.Modal(document.getElementById('loginModal'), { backdrop: 'static' });
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
             modal.show();
             document.querySelector('.sidebar').style.display = 'none';
             document.querySelector('.main-content').style.display = 'none';
         }
 
-        function addEmployee() {
-            const id = document.getElementById('empId').value;
-            const name = document.getElementById('empName').value;
-            const role = document.getElementById('empRole').value;
-            const email = document.getElementById('empEmail').value;
-            const phone = document.getElementById('empPhone').value;
-            const hireDate = document.getElementById('empHireDate').value;
-            if(id && name) {
-                db.ref('employees/' + id).set({ name: name, role: role, email: email, phone: phone, hireDate: hireDate });
-                document.getElementById('empId').value = '';
-                document.getElementById('empName').value = '';
-                document.getElementById('empRole').value = '';
-                document.getElementById('empEmail').value = '';
-                document.getElementById('empPhone').value = '';
-                document.getElementById('empHireDate').value = '';
-            }
+        function loadEmployees() {
+            db.ref('employees').once('value', s => {
+                let options = '<option value="">Select Employee</option>';
+                s.forEach(emp => {
+                    options += `<option value="${emp.key}">${emp.val().name}</option>`;
+                });
+                document.getElementById('empSelect').innerHTML = options;
+            });
         }
 
-        db.ref('employees').on('value', s => {
-            let html = "";
-            s.forEach(emp => {
-                const data = emp.val();
-                html += `<tr><td><b>${emp.key}</b></td><td>${data.name}</td><td>${data.role || 'Staff'}</td><td>${data.email || ''}</td><td>${data.phone || ''}</td><td>${data.hireDate || ''}</td>
-                <td><button class="btn btn-danger btn-sm" onclick="db.ref('employees/${emp.key}').remove()">Remove</button></td></tr>`;
+        function requestLeave() {
+            const empId = document.getElementById('empSelect').value;
+            const type = document.getElementById('leaveType').value;
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const reason = document.getElementById('reason').value;
+            if (!empId || !start || !end) return alert('Please fill all fields');
+            db.ref('leaves').push({
+                empId: empId,
+                type: type,
+                startDate: start,
+                endDate: end,
+                reason: reason,
+                status: 'pending'
             });
-            document.getElementById('empList').innerHTML = html;
-        });
+            alert('Leave request submitted');
+            document.getElementById('empSelect').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('reason').value = '';
+        }
+
+        function loadLeaves() {
+            db.ref('leaves').on('value', s => {
+                let html = '';
+                s.forEach(leave => {
+                    const data = leave.val();
+                    html += `<tr>
+                        <td>${data.empId}</td>
+                        <td>${data.type}</td>
+                        <td>${data.startDate}</td>
+                        <td>${data.endDate}</td>
+                        <td>${data.reason}</td>
+                        <td><span class="badge bg-warning">${data.status}</span></td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="approveLeave('${leave.key}')">Approve</button>
+                            <button class="btn btn-danger btn-sm" onclick="rejectLeave('${leave.key}')">Reject</button>
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById('leaveTable').innerHTML = html;
+            });
+        }
+
+        function approveLeave(key) {
+            db.ref('leaves/' + key).update({ status: 'approved' });
+        }
+
+        function rejectLeave(key) {
+            db.ref('leaves/' + key).update({ status: 'rejected' });
+        }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
