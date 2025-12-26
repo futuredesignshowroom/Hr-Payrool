@@ -216,41 +216,40 @@
             document.querySelector('#payrollTable tbody').innerHTML = html;
         }
 
-        // Dark Mode Toggle
+        // Dark Mode Toggle (robust)
         function toggleDarkMode(button) {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-bs-theme');
             if (currentTheme === 'dark') {
                 html.removeAttribute('data-bs-theme');
-                button.innerHTML = '<i class="bi bi-moon me-1"></i>Dark Mode';
+                if (button) button.innerHTML = '<i class="bi bi-moon me-1"></i>Dark Mode';
             } else {
                 html.setAttribute('data-bs-theme', 'dark');
-                button.innerHTML = '<i class="bi bi-sun me-1"></i>Light Mode';
+                if (button) button.innerHTML = '<i class="bi bi-sun me-1"></i>Light Mode';
             }
             localStorage.setItem('theme', html.getAttribute('data-bs-theme') || 'light');
-            // Sync both buttons
-            document.getElementById('darkModeToggle').innerHTML = button.innerHTML;
-            document.getElementById('darkModeToggleMobile').innerHTML = button.innerHTML;
+            const d = document.getElementById('darkModeToggle');
+            const m = document.getElementById('darkModeToggleMobile');
+            if (d) d.innerHTML = button ? button.innerHTML : (html.getAttribute('data-bs-theme') === 'dark' ? '<i class="bi bi-sun me-1"></i>Light Mode' : '<i class="bi bi-moon me-1"></i>Dark Mode');
+            if (m) m.innerHTML = d.innerHTML;
         }
 
-        document.getElementById('darkModeToggle').addEventListener('click', function() {
-            toggleDarkMode(this);
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const dBtn = document.getElementById('darkModeToggle');
+            const mBtn = document.getElementById('darkModeToggleMobile');
+            if (dBtn) dBtn.addEventListener('click', function() { toggleDarkMode(this); });
+            if (mBtn) mBtn.addEventListener('click', function() { toggleDarkMode(this); });
 
-        document.getElementById('darkModeToggleMobile').addEventListener('click', function() {
-            toggleDarkMode(this);
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+                if (dBtn) dBtn.innerHTML = '<i class="bi bi-sun me-1"></i>Light Mode';
+                if (mBtn) mBtn.innerHTML = '<i class="bi bi-sun me-1"></i>Light Mode';
+            } else {
+                if (dBtn) dBtn.innerHTML = '<i class="bi bi-moon me-1"></i>Dark Mode';
+                if (mBtn) mBtn.innerHTML = '<i class="bi bi-moon me-1"></i>Dark Mode';
+            }
         });
-
-        // Load saved theme
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.documentElement.setAttribute('data-bs-theme', 'dark');
-            document.getElementById('darkModeToggle').innerHTML = '<i class="bi bi-sun me-1"></i>Light Mode';
-            document.getElementById('darkModeToggleMobile').innerHTML = '<i class="bi bi-sun me-1"></i>Light Mode';
-        } else {
-            document.getElementById('darkModeToggle').innerHTML = '<i class="bi bi-moon me-1"></i>Dark Mode';
-            document.getElementById('darkModeToggleMobile').innerHTML = '<i class="bi bi-moon me-1"></i>Dark Mode';
-        }
 
         // Notification Function
         function showNotification(message, type = 'info') {
